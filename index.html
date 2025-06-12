@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friends Directory</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Friends Directory</h1>
+        <button id="addFriendBtn">Add Friend</button>
+        <button id="exportBtn">Export JSON</button>
+        <button id="importBtn">Import JSON</button>
+        <input type="file" id="importFile" style="display:none" accept="application/json">
+    </header>
+    <main id="friendsList">
+        <!-- Friend cards will be rendered here -->
+    </main>
+    <div id="friendModal" class="modal hidden">
+        <form id="friendForm"></form>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
