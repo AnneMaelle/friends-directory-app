@@ -29,6 +29,7 @@ function resetForm() {
     editingIndex = null;
 }
 function openModal(editIdx = null) {
+    friendModal.style.display = 'flex';
     friendModal.classList.remove('hidden');
     if (editIdx !== null) {
         modalTitle.textContent = 'Edit Friend';
@@ -44,6 +45,9 @@ function openModal(editIdx = null) {
 }
 function closeModal() {
     friendModal.classList.add('hidden');
+    setTimeout(() => {
+        friendModal.style.display = 'none';
+    }, 200);
     resetForm();
 }
 
@@ -157,3 +161,6 @@ importFile.onchange = function(e) {
 // Init
 loadFriends();
 renderFriends();
+// On page load, ensure modal is hidden
+friendModal.classList.add('hidden');
+friendModal.style.display = 'none';
