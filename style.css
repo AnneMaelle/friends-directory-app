@@ -124,6 +124,20 @@ main#friendsList {
     gap: 1rem;
     justify-content: flex-end;
 }
+.combobox-wrapper {
+    width: 100%;
+}
+.combobox-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.5rem;
+    border: 1px solid #cfd8dc;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+.combobox-list {
+    min-width: 100%;
+}
 @media (max-width: 900px) {
     main#friendsList {
         flex-direction: column;

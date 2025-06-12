@@ -19,6 +19,11 @@ const modalTitle = document.getElementById('modalTitle');
 // Load dropdown options from JSON asset
 async function loadDropdownOptions() {
     try {
+        const local = localStorage.getItem('dropdown_options');
+        if (local) {
+            DROPDOWN_OPTIONS = JSON.parse(local);
+            return;
+        }
         const res = await fetch('dropdown_options.json');
         DROPDOWN_OPTIONS = await res.json();
     } catch (e) {
@@ -56,9 +61,9 @@ function openModal(editIdx = null) {
         editingIndex = null;
     }
     friendForm.innerHTML = renderFriendForm(friend);
-    // Re-attach cancel event
+    attachDynamicDropdownListeners();
+    attachComboboxListeners();
     document.getElementById('cancelBtn').onclick = closeModal;
-    // Re-attach submit event
     friendForm.onsubmit = formSubmitHandler;
 }
 function closeModal() {
@@ -104,9 +109,19 @@ function renderFriends() {
 }
 function renderDropdown(name, selectedValue) {
     const options = DROPDOWN_OPTIONS[name] || [];
-    return `<select name="${name}">` +
-        options.map(opt => `<option value="${opt.toLowerCase() || ''}"${selectedValue === opt.toLowerCase() ? ' selected' : ''}>${opt || 'Select...'}</option>`).join('') +
-        '</select>';
+    let html = `<select name="${name}" data-dropdown="${name}">` +
+        options.map(opt => `<option value="${opt.toLowerCase() || ''}"${selectedValue === opt.toLowerCase() ? ' selected' : ''}>${opt || 'Select...'}</option>`).join('');
+    html += `<option value="__add_new__">+ Add new...</option></select>`;
+    return html;
+}
+function renderCombobox(name, value) {
+    const options = DROPDOWN_OPTIONS[name] || [];
+    return `
+      <div class="combobox-wrapper" style="position:relative;">
+        <input type="text" name="${name}" class="combobox-input" autocomplete="off" value="${value || ''}" data-combobox="${name}" placeholder="Type or select..." />
+        <div class="combobox-list" style="display:none; position:absolute; background:#fff; border:1px solid #ccc; z-index:10; max-height:120px; overflow-y:auto;"></div>
+      </div>
+    `;
 }
 function renderFriendForm(friend = {}) {
     return `
@@ -115,24 +130,24 @@ function renderFriendForm(friend = {}) {
         <label>Nickname <input type="text" name="nickname" value="${friend.nickname || ''}"></label>
         <label>Birthday <input type="date" name="birthday" value="${friend.birthday || ''}"></label>
         <label>Relationship Type
-            ${renderDropdown('relationship', friend.relationship)}
+            ${renderCombobox('relationship', friend.relationship)}
         </label>
         <label>Food Preferences <input type="text" name="foodPreferences" value="${friend.foodPreferences || ''}"></label>
         <label>Dietary Restrictions
-            ${renderDropdown('dietaryRestrictions', friend.dietaryRestrictions)}
+            ${renderCombobox('dietaryRestrictions', friend.dietaryRestrictions)}
         </label>
         <label>Allergies / Food Phobias <input type="text" name="allergies" value="${friend.allergies || ''}"></label>
         <label>Favorite Meals/Drinks/Desserts <input type="text" name="favorites" value="${friend.favorites || ''}"></label>
         <label>Gift History
-            ${renderDropdown('giftHistory', friend.giftHistory)}
+            ${renderCombobox('giftHistory', friend.giftHistory)}
         </label>
         <label>Future Gift Ideas <input type="text" name="giftIdeas" value="${friend.giftIdeas || ''}"></label>
         <label>Tags/Notes <input type="text" name="tags" value="${friend.tags || ''}"></label>
         <label>Favorite Color
-            ${renderDropdown('favoriteColor', friend.favoriteColor)}
+            ${renderCombobox('favoriteColor', friend.favoriteColor)}
         </label>
         <label>Clothing Size
-            ${renderDropdown('clothingSize', friend.clothingSize)}
+            ${renderCombobox('clothingSize', friend.clothingSize)}
         </label>
         <label>Perfume/Brand Preferences <input type="text" name="brandPreferences" value="${friend.brandPreferences || ''}"></label>
         <label>Personal Notes <textarea name="notes">${friend.notes || ''}</textarea></label>
@@ -141,6 +156,70 @@ function renderFriendForm(friend = {}) {
             <button type="button" id="cancelBtn">Cancel</button>
         </div>
     `;
+}
+
+// Handle dynamic add for dropdowns
+function handleDropdownAddNew(e) {
+    const select = e.target;
+    if (select.value === '__add_new__') {
+        const dropdownName = select.getAttribute('data-dropdown');
+        setTimeout(() => {
+            const newOption = prompt(`Add new option for ${dropdownName}:`);
+            if (newOption && !DROPDOWN_OPTIONS[dropdownName].includes(newOption)) {
+                DROPDOWN_OPTIONS[dropdownName].push(newOption);
+                localStorage.setItem('dropdown_options', JSON.stringify(DROPDOWN_OPTIONS));
+                // Re-render the form with the new option selected
+                const formData = new FormData(friendForm);
+                const friend = {};
+                for (const [k, v] of formData.entries()) friend[k] = v;
+                friend[dropdownName] = newOption.toLowerCase();
+                friendForm.innerHTML = renderFriendForm(friend);
+                attachDynamicDropdownListeners();
+                attachComboboxListeners();
+                friendForm.onsubmit = formSubmitHandler;
+                document.getElementById('cancelBtn').onclick = closeModal;
+            } else {
+                // Reset selection if cancelled or duplicate
+                select.value = '';
+            }
+        }, 100);
+    }
+}
+
+function attachDynamicDropdownListeners() {
+    friendForm.querySelectorAll('select[data-dropdown]').forEach(sel => {
+        sel.addEventListener('change', handleDropdownAddNew);
+    });
+}
+function attachComboboxListeners() {
+    friendForm.querySelectorAll('.combobox-wrapper').forEach(wrapper => {
+        const input = wrapper.querySelector('.combobox-input');
+        const list = wrapper.querySelector('.combobox-list');
+        const name = input.getAttribute('data-combobox');
+        input.addEventListener('input', function() {
+            const val = input.value.toLowerCase();
+            const opts = (DROPDOWN_OPTIONS[name] || []).filter(opt => opt.toLowerCase().includes(val) && opt);
+            if (opts.length > 0) {
+                list.innerHTML = opts.map(opt => `<div class="combobox-item" style="padding:4px 8px; cursor:pointer;">${opt}</div>`).join('');
+                list.style.display = 'block';
+            } else {
+                list.innerHTML = '';
+                list.style.display = 'none';
+            }
+        });
+        input.addEventListener('focus', function() {
+            input.dispatchEvent(new Event('input'));
+        });
+        input.addEventListener('blur', function() {
+            setTimeout(() => { list.style.display = 'none'; }, 200);
+        });
+        list.addEventListener('mousedown', function(e) {
+            if (e.target.classList.contains('combobox-item')) {
+                input.value = e.target.textContent;
+                list.style.display = 'none';
+            }
+        });
+    });
 }
 
 // Add/Edit/Delete
@@ -156,11 +235,19 @@ window.deleteFriend = function(idx) {
 };
 
 // Move form submit logic to a named function
+// In formSubmitHandler, after saving, add new value to options if not present
 function formSubmitHandler(e) {
     e.preventDefault();
     const formData = new FormData(friendForm);
     const friend = {};
     for (const [k, v] of formData.entries()) friend[k] = v.trim();
+    // Add new combobox values if not present
+    ['relationship','dietaryRestrictions','giftHistory','favoriteColor','clothingSize'].forEach(field => {
+        if (friend[field] && !DROPDOWN_OPTIONS[field].includes(friend[field])) {
+            DROPDOWN_OPTIONS[field].push(friend[field]);
+            localStorage.setItem('dropdown_options', JSON.stringify(DROPDOWN_OPTIONS));
+        }
+    });
     if (editingIndex !== null) {
         friends[editingIndex] = friend;
     } else {
