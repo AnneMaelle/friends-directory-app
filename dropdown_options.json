@@ -1,0 +1,51 @@
+{
+    "relationship": [
+        "",
+        "Brother",
+        "Friend",
+        "Colleague",
+        "Family",
+        "Partner",
+        "Other"
+    ],
+    "dietaryRestrictions": [
+        "",
+        "Vegetarian",
+        "Vegan",
+        "Gluten-Free",
+        "Halal",
+        "Kosher",
+        "Other"
+    ],
+    "giftHistory": [
+        "",
+        "Socks",
+        "Book",
+        "Mug",
+        "Perfume",
+        "Chocolate",
+        "Other"
+    ],
+    "favoriteColor": [
+        "",
+        "Red",
+        "Blue",
+        "Green",
+        "Yellow",
+        "Purple",
+        "Pink",
+        "Black",
+        "White",
+        "Other"
+    ],
+    "clothingSize": [
+        "",
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL",
+        "Other"
+    ]
+}

@@ -4,17 +4,34 @@
 const STORAGE_KEY = 'friendsDirectory';
 let friends = [];
 let editingIndex = null;
+let DROPDOWN_OPTIONS = {};
 
 // DOM Elements
 const friendsList = document.getElementById('friendsList');
 const addFriendBtn = document.getElementById('addFriendBtn');
 const friendModal = document.getElementById('friendModal');
 const friendForm = document.getElementById('friendForm');
-const cancelBtn = document.getElementById('cancelBtn');
 const exportBtn = document.getElementById('exportBtn');
 const importBtn = document.getElementById('importBtn');
 const importFile = document.getElementById('importFile');
 const modalTitle = document.getElementById('modalTitle');
+
+// Load dropdown options from JSON asset
+async function loadDropdownOptions() {
+    try {
+        const res = await fetch('dropdown_options.json');
+        DROPDOWN_OPTIONS = await res.json();
+    } catch (e) {
+        // fallback to defaults if fetch fails
+        DROPDOWN_OPTIONS = {
+            relationship: ['', 'Friend', 'Colleague', 'Family', 'Partner', 'Other'],
+            dietaryRestrictions: ['', 'Vegetarian', 'Vegan', 'Gluten-Free', 'Halal', 'Kosher', 'Other'],
+            giftHistory: ['', 'Socks', 'Book', 'Mug', 'Perfume', 'Chocolate', 'Other'],
+            favoriteColor: ['', 'Red', 'Blue', 'Green', 'Yellow', 'Purple', 'Pink', 'Black', 'White', 'Other'],
+            clothingSize: ['', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'Other']
+        };
+    }
+}
 
 // Utility
 function saveFriends() {
@@ -31,17 +48,18 @@ function resetForm() {
 function openModal(editIdx = null) {
     friendModal.style.display = 'flex';
     friendModal.classList.remove('hidden');
+    let friend = {};
     if (editIdx !== null) {
-        modalTitle.textContent = 'Edit Friend';
         editingIndex = editIdx;
-        const f = friends[editIdx];
-        for (const [k, v] of Object.entries(f)) {
-            if (friendForm.elements[k]) friendForm.elements[k].value = v || '';
-        }
+        friend = friends[editIdx];
     } else {
-        modalTitle.textContent = 'Add Friend';
-        resetForm();
+        editingIndex = null;
     }
+    friendForm.innerHTML = renderFriendForm(friend);
+    // Re-attach cancel event
+    document.getElementById('cancelBtn').onclick = closeModal;
+    // Re-attach submit event
+    friendForm.onsubmit = formSubmitHandler;
 }
 function closeModal() {
     friendModal.classList.add('hidden');
@@ -84,6 +102,46 @@ function renderFriends() {
         friendsList.appendChild(card);
     });
 }
+function renderDropdown(name, selectedValue) {
+    const options = DROPDOWN_OPTIONS[name] || [];
+    return `<select name="${name}">` +
+        options.map(opt => `<option value="${opt.toLowerCase() || ''}"${selectedValue === opt.toLowerCase() ? ' selected' : ''}>${opt || 'Select...'}</option>`).join('') +
+        '</select>';
+}
+function renderFriendForm(friend = {}) {
+    return `
+        <h2 id="modalTitle">${editingIndex !== null ? 'Edit Friend' : 'Add Friend'}</h2>
+        <label>Full Name <input type="text" name="fullName" value="${friend.fullName || ''}" required></label>
+        <label>Nickname <input type="text" name="nickname" value="${friend.nickname || ''}"></label>
+        <label>Birthday <input type="date" name="birthday" value="${friend.birthday || ''}"></label>
+        <label>Relationship Type
+            ${renderDropdown('relationship', friend.relationship)}
+        </label>
+        <label>Food Preferences <input type="text" name="foodPreferences" value="${friend.foodPreferences || ''}"></label>
+        <label>Dietary Restrictions
+            ${renderDropdown('dietaryRestrictions', friend.dietaryRestrictions)}
+        </label>
+        <label>Allergies / Food Phobias <input type="text" name="allergies" value="${friend.allergies || ''}"></label>
+        <label>Favorite Meals/Drinks/Desserts <input type="text" name="favorites" value="${friend.favorites || ''}"></label>
+        <label>Gift History
+            ${renderDropdown('giftHistory', friend.giftHistory)}
+        </label>
+        <label>Future Gift Ideas <input type="text" name="giftIdeas" value="${friend.giftIdeas || ''}"></label>
+        <label>Tags/Notes <input type="text" name="tags" value="${friend.tags || ''}"></label>
+        <label>Favorite Color
+            ${renderDropdown('favoriteColor', friend.favoriteColor)}
+        </label>
+        <label>Clothing Size
+            ${renderDropdown('clothingSize', friend.clothingSize)}
+        </label>
+        <label>Perfume/Brand Preferences <input type="text" name="brandPreferences" value="${friend.brandPreferences || ''}"></label>
+        <label>Personal Notes <textarea name="notes">${friend.notes || ''}</textarea></label>
+        <div class="modal-actions">
+            <button type="submit">Save</button>
+            <button type="button" id="cancelBtn">Cancel</button>
+        </div>
+    `;
+}
 
 // Add/Edit/Delete
 window.editFriend = function(idx) {
@@ -97,8 +155,8 @@ window.deleteFriend = function(idx) {
     }
 };
 
-// Form Submit
-friendForm.onsubmit = function(e) {
+// Move form submit logic to a named function
+function formSubmitHandler(e) {
     e.preventDefault();
     const formData = new FormData(friendForm);
     const friend = {};
@@ -111,11 +169,10 @@ friendForm.onsubmit = function(e) {
     saveFriends();
     renderFriends();
     closeModal();
-};
+}
 
 // Modal Controls
 addFriendBtn.onclick = () => openModal();
-cancelBtn.onclick = closeModal;
 friendModal.onclick = (e) => { if (e.target === friendModal) closeModal(); };
 
 document.addEventListener('keydown', (e) => {
@@ -159,8 +216,11 @@ importFile.onchange = function(e) {
 };
 
 // Init
-loadFriends();
-renderFriends();
-// On page load, ensure modal is hidden
-friendModal.classList.add('hidden');
-friendModal.style.display = 'none';
+(async function init() {
+    await loadDropdownOptions();
+    loadFriends();
+    renderFriends();
+    // On page load, ensure modal is hidden
+    friendModal.classList.add('hidden');
+    friendModal.style.display = 'none';
+})();
