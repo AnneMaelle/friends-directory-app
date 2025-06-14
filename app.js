@@ -109,7 +109,6 @@ window.setTagFilter = function(tag) {
 
 // Add filter modal logic
 window.openAddFilterModal = function() {
-    // Create modal overlay
     let modal = document.getElementById('customFilterModal');
     if (modal) modal.remove();
     modal = document.createElement('div');
@@ -130,9 +129,8 @@ window.openAddFilterModal = function() {
         <label style="font-weight:500;">Filter Name
           <input type="text" name="filterName" required placeholder="e.g. Cheese Lovers" style="margin-top:0.3em;padding:0.5em;font-size:1em;">
         </label>
-        <label style="font-weight:500;">Query (e.g. <i>foodPreferences contains cheese</i>)
-          <input type="text" name="filterQuery" required placeholder="e.g. foodPreferences contains cheese" style="margin-top:0.3em;padding:0.5em;font-size:1em;">
-        </label>
+        <div id="filterRows"></div>
+        <button type="button" id="addFilterRow" style="background:#eaf4fb;color:#4a90e2;border:none;padding:0.4em 1em;border-radius:5px;cursor:pointer;font-weight:600;margin-bottom:0.5em;">+ Add Condition</button>
         <div style="display:flex;gap:1em;justify-content:flex-end;">
           <button type="button" id="cancelCustomFilter" style="background:#eee;color:#4a90e2;border:none;padding:0.5em 1.2em;border-radius:5px;cursor:pointer;">Cancel</button>
           <button type="submit" style="background:linear-gradient(135deg,#4a90e2 60%,#50e3c2 100%);color:#fff;border:none;padding:0.5em 1.2em;border-radius:5px;cursor:pointer;font-weight:600;">Add</button>
@@ -141,19 +139,64 @@ window.openAddFilterModal = function() {
     `;
     document.body.appendChild(modal);
     document.getElementById('cancelCustomFilter').onclick = () => modal.remove();
+
+    // Add filter row logic
+    const filterRows = document.getElementById('filterRows');
+    function addRow(field = '', cond = 'contains', value = '') {
+        const row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.gap = '0.5em';
+        row.style.marginBottom = '0.5em';
+        row.innerHTML = `
+          <select name="filterField" required style="padding:0.3em;">
+            <option value="">Field...</option>
+            <option value="fullName">Full Name</option>
+            <option value="nickname">Nickname</option>
+            <option value="foodPreferences">Food Pref</option>
+            <option value="dietaryRestrictions">Dietary</option>
+            <option value="relationship">Relationship</option>
+            <option value="tags">Tags/Notes</option>
+            <option value="favoriteColor">Color</option>
+            <option value="clothingSize">Clothing Size</option>
+            <option value="brandPreferences">Brand Pref</option>
+            <option value="allergies">Allergies</option>
+            <option value="giftHistory">Gift History</option>
+            <option value="giftIdeas">Gift Ideas</option>
+          </select>
+          <select name="filterCond" required style="padding:0.3em;">
+            <option value="contains">contains</option>
+            <option value="equals">equals</option>
+          </select>
+          <input type="text" name="filterValue" required placeholder="Value" style="padding:0.3em;flex:1;">
+          <button type="button" class="removeRowBtn" style="background:#fff;color:#e74c3c;border:none;font-size:1.2em;cursor:pointer;">&times;</button>
+        `;
+        row.querySelector('select[name="filterField"]').value = field;
+        row.querySelector('select[name="filterCond"]').value = cond;
+        row.querySelector('input[name="filterValue"]').value = value;
+        row.querySelector('.removeRowBtn').onclick = () => row.remove();
+        filterRows.appendChild(row);
+    }
+    document.getElementById('addFilterRow').onclick = () => addRow();
+    addRow(); // Add initial row
     document.getElementById('customFilterForm').onsubmit = function(e) {
         e.preventDefault();
         const name = this.filterName.value.trim();
-        const query = this.filterQuery.value.trim();
-        if (!name || !query) return;
+        const rows = Array.from(filterRows.children).map(row => {
+            return {
+                field: row.querySelector('select[name="filterField"]').value,
+                cond: row.querySelector('select[name="filterCond"]').value,
+                value: row.querySelector('input[name="filterValue"]').value.trim()
+            };
+        }).filter(r => r.field && r.value);
+        if (!name || !rows.length) return;
         if (!window.customFilters) window.customFilters = [];
-        window.customFilters.push({ name, query });
+        window.customFilters.push({ name, conditions: rows });
         modal.remove();
         renderTagFilters();
     };
 };
 
-// Extend renderTagFilters to show custom filters
+// Update renderTagFilters to use filter.conditions
 const origRenderTagFilters = renderTagFilters;
 renderTagFilters = function() {
     origRenderTagFilters();
@@ -173,24 +216,21 @@ renderTagFilters = function() {
     }
 };
 
-// Render
-function renderFriends() {
+// Update renderFriends to support multiple conditions
+// const origRenderFriends = renderFriends;
+renderFriends = function() {
     let filtered = friends;
     if (activeTagFilter && activeTagFilter.startsWith('custom')) {
         const idx = parseInt(activeTagFilter.replace('custom', ''));
         const filter = window.customFilters && window.customFilters[idx];
-        if (filter) {
-            // Parse query: e.g. 'foodPreferences contains cheese'
-            const match = filter.query.match(/^(\w+)\s+contains\s+(.+)$/i);
-            if (match) {
-                const field = match[1];
-                const value = match[2].toLowerCase();
-                filtered = friends.filter(f => (f[field]||'').toString().toLowerCase().includes(value));
-            } else {
-                // fallback: search all fields for the query string
-                const keyword = filter.query.toLowerCase();
-                filtered = friends.filter(f => Object.values(f).some(val => (val||'').toString().toLowerCase().includes(keyword)));
-            }
+        if (filter && filter.conditions) {
+            filtered = friends.filter(f => filter.conditions.every(cond => {
+                const fieldVal = (f[cond.field]||'').toString().toLowerCase();
+                const val = cond.value.toLowerCase();
+                if (cond.cond === 'contains') return fieldVal.includes(val);
+                if (cond.cond === 'equals') return fieldVal === val;
+                return false;
+            }));
         }
     }
     else if (activeTagFilter === 'birthdays') {
