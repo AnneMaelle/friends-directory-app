@@ -93,29 +93,29 @@ function renderFriends() {
             <div class="card-section">
                 <button class="section-toggle" onclick="toggleSection(this)">Personal Info</button>
                 <div class="section-content">
-                    <p><strong>Birthday:</strong> ${f.birthday || '-'}</p>
-                    <p><strong>Relationship:</strong> ${f.relationship || '-'}</p>
-                    <p><strong>Clothing Size:</strong> ${f.clothingSize || '-'}</p>
-                    <p><strong>Brand Pref:</strong> ${f.brandPreferences || '-'}</p>
-                    <p><strong>Color:</strong> ${f.favoriteColor || '-'}</p>
-                    <p><strong>Tags/Notes:</strong> ${f.tags || '-'}</p>
-                    <p><strong>Notes:</strong> ${f.notes || '-'}</p>
+                    <p><span title="Birthday">🎂</span> <strong>Birthday:</strong> ${f.birthday || '-'}</p>
+                    <p><span title="Relationship">❤️</span> <strong>Relationship:</strong> ${f.relationship || '-'}</p>
+                    <p><span title="Clothing Size">👕</span> <strong>Clothing Size:</strong> ${f.clothingSize || '-'}</p>
+                    <p><span title="Brand Preferences">🌸</span> <strong>Brand Pref:</strong> ${f.brandPreferences || '-'}</p>
+                    <p><span title="Favorite Color">🎨</span> <strong>Color:</strong> ${f.favoriteColor || '-'}</p>
+                    <p><span title="Tags/Notes">🏷️</span> <strong>Tags/Notes:</strong> ${f.tags || '-'}</p>
+                    <p><span title="Personal Notes">📝</span> <strong>Notes:</strong> ${f.notes || '-'}</p>
                 </div>
             </div>
             <div class="card-section">
                 <button class="section-toggle" onclick="toggleSection(this)">Food & Dietary</button>
                 <div class="section-content">
-                    <p><strong>Food Pref:</strong> ${f.foodPreferences || '-'}</p>
-                    <p><strong>Dietary:</strong> ${f.dietaryRestrictions || '-'}</p>
-                    <p><strong>Allergies:</strong> ${f.allergies || '-'}</p>
-                    <p><strong>Favorite Meals/Drinks/Desserts:</strong> ${f.favorites || '-'}</p>
+                    <p><span title="Food Preferences">🍽️</span> <strong>Food Pref:</strong> ${f.foodPreferences || '-'}</p>
+                    <p><span title="Dietary Restrictions">🥗</span> <strong>Dietary:</strong> ${f.dietaryRestrictions || '-'}</p>
+                    <p><span title="Allergies">⚠️</span> <strong>Allergies:</strong> ${f.allergies || '-'}</p>
+                    <p><span title="Favorites">🍰</span> <strong>Favorite Meals/Drinks/Desserts:</strong> ${f.favorites || '-'}</p>
                 </div>
             </div>
             <div class="card-section">
                 <button class="section-toggle" onclick="toggleSection(this)">Gifts</button>
                 <div class="section-content">
-                    <p><strong>Gift History:</strong> ${f.giftHistory || '-'}</p>
-                    <p><strong>Gift Ideas:</strong> ${f.giftIdeas || '-'}</p>
+                    <p><span title="Gift History">🎁</span> <strong>Gift History:</strong> ${f.giftHistory || '-'}</p>
+                    <p><span title="Gift Ideas">💡</span> <strong>Gift Ideas:</strong> ${f.giftIdeas || '-'}</p>
                 </div>
             </div>
         `;
