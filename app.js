@@ -90,19 +90,34 @@ function renderFriends() {
                 <button class="icon-btn" title="Delete" onclick="deleteFriend(${idx})">🗑️</button>
             </div>
             <h3>${f.fullName} ${f.nickname ? `(${f.nickname})` : ''}</h3>
-            <p><strong>Birthday:</strong> ${f.birthday || '-'}</p>
-            <p><strong>Relationship:</strong> ${f.relationship || '-'}</p>
-            <p><strong>Food Pref:</strong> ${f.foodPreferences || '-'}</p>
-            <p><strong>Dietary:</strong> ${f.dietaryRestrictions || '-'}</p>
-            <p><strong>Allergies:</strong> ${f.allergies || '-'}</p>
-            <p><strong>Favorites:</strong> ${f.favorites || '-'}</p>
-            <p><strong>Gift History:</strong> ${f.giftHistory || '-'}</p>
-            <p><strong>Gift Ideas:</strong> ${f.giftIdeas || '-'}</p>
-            <p><strong>Tags/Notes:</strong> ${f.tags || '-'}</p>
-            <p><strong>Color:</strong> ${f.favoriteColor || '-'}</p>
-            <p><strong>Clothing Size:</strong> ${f.clothingSize || '-'}</p>
-            <p><strong>Brand Pref:</strong> ${f.brandPreferences || '-'}</p>
-            <p><strong>Notes:</strong> ${f.notes || '-'}</p>
+            <div class="card-section">
+                <button class="section-toggle" onclick="toggleSection(this)">Personal Info</button>
+                <div class="section-content">
+                    <p><strong>Birthday:</strong> ${f.birthday || '-'}</p>
+                    <p><strong>Relationship:</strong> ${f.relationship || '-'}</p>
+                    <p><strong>Clothing Size:</strong> ${f.clothingSize || '-'}</p>
+                    <p><strong>Brand Pref:</strong> ${f.brandPreferences || '-'}</p>
+                    <p><strong>Color:</strong> ${f.favoriteColor || '-'}</p>
+                    <p><strong>Tags/Notes:</strong> ${f.tags || '-'}</p>
+                    <p><strong>Notes:</strong> ${f.notes || '-'}</p>
+                </div>
+            </div>
+            <div class="card-section">
+                <button class="section-toggle" onclick="toggleSection(this)">Food & Dietary</button>
+                <div class="section-content">
+                    <p><strong>Food Pref:</strong> ${f.foodPreferences || '-'}</p>
+                    <p><strong>Dietary:</strong> ${f.dietaryRestrictions || '-'}</p>
+                    <p><strong>Allergies:</strong> ${f.allergies || '-'}</p>
+                    <p><strong>Favorite Meals/Drinks/Desserts:</strong> ${f.favorites || '-'}</p>
+                </div>
+            </div>
+            <div class="card-section">
+                <button class="section-toggle" onclick="toggleSection(this)">Gifts</button>
+                <div class="section-content">
+                    <p><strong>Gift History:</strong> ${f.giftHistory || '-'}</p>
+                    <p><strong>Gift Ideas:</strong> ${f.giftIdeas || '-'}</p>
+                </div>
+            </div>
         `;
         friendsList.appendChild(card);
     });
@@ -257,6 +272,18 @@ function formSubmitHandler(e) {
     renderFriends();
     closeModal();
 }
+
+// Collapsible section logic
+window.toggleSection = function(btn) {
+    const content = btn.nextElementSibling;
+    if (content.style.display === 'none' || !content.style.display) {
+        content.style.display = 'block';
+        btn.classList.add('open');
+    } else {
+        content.style.display = 'none';
+        btn.classList.remove('open');
+    }
+};
 
 // Modal Controls
 addFriendBtn.onclick = () => openModal();

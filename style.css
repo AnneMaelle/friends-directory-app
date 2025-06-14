@@ -48,6 +48,9 @@ main#friendsList {
     flex-direction: column;
     gap: 0.5rem;
     position: relative;
+    min-width: 260px;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 .friend-card .card-actions {
     position: absolute;
@@ -82,6 +85,39 @@ main#friendsList {
 .friend-card .icon-btn:hover {
     transform: scale(1.2);
     background: #e6f0fa;
+}
+.card-section {
+    margin-top: 0.7rem;
+    border-radius: 6px;
+    background: #f7fafd;
+    box-shadow: 0 1px 3px rgba(74,144,226,0.04);
+    overflow: hidden;
+}
+.section-toggle {
+    width: 100%;
+    background: #e6f0fa;
+    border: none;
+    outline: none;
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: #4a90e2;
+    padding: 0.5rem 0.7rem;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-bottom: 1px solid #dbeafe;
+    position: relative;
+}
+.section-toggle.open {
+    background: #d0e6fa;
+}
+.section-content {
+    padding: 0.5rem 1rem 0.7rem 1rem;
+    display: none;
+    animation: fadeIn 0.3s;
+}
+.card-section:first-of-type .section-content {
+    display: block;
 }
 .modal {
     position: fixed;
@@ -180,6 +216,10 @@ main#friendsList {
     0%, 100% { box-shadow: 0 4px 16px rgba(80, 227, 194, 0.18), 0 1.5px 8px rgba(74,144,226,0.18); }
     50% { box-shadow: 0 8px 32px rgba(80, 227, 194, 0.28), 0 3px 16px rgba(74,144,226,0.28); }
 }
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
 @media (max-width: 900px) {
     main#friendsList {
         flex-direction: column;
@@ -214,6 +254,16 @@ main#friendsList {
         width: 98vw;
         padding: 0.7rem;
         font-size: 0.98rem;
+    }
+    .card-section {
+        margin-top: 0.5rem;
+    }
+    .section-toggle {
+        font-size: 1rem;
+        padding: 0.4rem 0.5rem;
+    }
+    .section-content {
+        padding: 0.4rem 0.7rem 0.5rem 0.7rem;
     }
     #friendForm {
         padding: 0.7rem;
