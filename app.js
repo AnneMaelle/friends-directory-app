@@ -84,6 +84,14 @@ function renderFriends() {
     friends.forEach((f, idx) => {
         const card = document.createElement('div');
         card.className = 'friend-card';
+        // Helper to render a field or a + Add link if empty
+        function renderField(label, value, icon, fieldName) {
+            if (value && value !== '-') {
+                return `<p><span title="${label}">${icon}</span> <strong>${label}:</strong> ${value}</p>`;
+            } else {
+                return `<p class="add-field"><span title="${label}">${icon}</span> <strong>${label}:</strong> <a href="#" onclick="editFriend(${idx});event.preventDefault();" class="add-link">+ Add</a></p>`;
+            }
+        }
         card.innerHTML = `
             <div class="card-actions">
                 <button class="icon-btn" title="Edit" onclick="editFriend(${idx})">✏️</button>
@@ -93,29 +101,29 @@ function renderFriends() {
             <div class="card-section">
                 <button class="section-toggle" onclick="toggleSection(this)">Personal Info</button>
                 <div class="section-content">
-                    <p><span title="Birthday">🎂</span> <strong>Birthday:</strong> ${f.birthday || '-'}</p>
-                    <p><span title="Relationship">❤️</span> <strong>Relationship:</strong> ${f.relationship || '-'}</p>
-                    <p><span title="Clothing Size">👕</span> <strong>Clothing Size:</strong> ${f.clothingSize || '-'}</p>
-                    <p><span title="Brand Preferences">🌸</span> <strong>Brand Pref:</strong> ${f.brandPreferences || '-'}</p>
-                    <p><span title="Favorite Color">🎨</span> <strong>Color:</strong> ${f.favoriteColor || '-'}</p>
-                    <p><span title="Tags/Notes">🏷️</span> <strong>Tags/Notes:</strong> ${f.tags || '-'}</p>
-                    <p><span title="Personal Notes">📝</span> <strong>Notes:</strong> ${f.notes || '-'}</p>
+                    ${renderField('Birthday', f.birthday, '🎂', 'birthday')}
+                    ${renderField('Relationship', f.relationship, '❤️', 'relationship')}
+                    ${renderField('Clothing Size', f.clothingSize, '👕', 'clothingSize')}
+                    ${renderField('Brand Pref', f.brandPreferences, '🌸', 'brandPreferences')}
+                    ${renderField('Color', f.favoriteColor, '🎨', 'favoriteColor')}
+                    ${renderField('Tags/Notes', f.tags, '🏷️', 'tags')}
+                    ${renderField('Notes', f.notes, '📝', 'notes')}
                 </div>
             </div>
             <div class="card-section">
                 <button class="section-toggle" onclick="toggleSection(this)">Food & Dietary</button>
                 <div class="section-content">
-                    <p><span title="Food Preferences">🍽️</span> <strong>Food Pref:</strong> ${f.foodPreferences || '-'}</p>
-                    <p><span title="Dietary Restrictions">🥗</span> <strong>Dietary:</strong> ${f.dietaryRestrictions || '-'}</p>
-                    <p><span title="Allergies">⚠️</span> <strong>Allergies:</strong> ${f.allergies || '-'}</p>
-                    <p><span title="Favorites">🍰</span> <strong>Favorite Meals/Drinks/Desserts:</strong> ${f.favorites || '-'}</p>
+                    ${renderField('Food Pref', f.foodPreferences, '🍽️', 'foodPreferences')}
+                    ${renderField('Dietary', f.dietaryRestrictions, '🥗', 'dietaryRestrictions')}
+                    ${renderField('Allergies', f.allergies, '⚠️', 'allergies')}
+                    ${renderField('Favorite Meals/Drinks/Desserts', f.favorites, '🍰', 'favorites')}
                 </div>
             </div>
             <div class="card-section">
                 <button class="section-toggle" onclick="toggleSection(this)">Gifts</button>
                 <div class="section-content">
-                    <p><span title="Gift History">🎁</span> <strong>Gift History:</strong> ${f.giftHistory || '-'}</p>
-                    <p><span title="Gift Ideas">💡</span> <strong>Gift Ideas:</strong> ${f.giftIdeas || '-'}</p>
+                    ${renderField('Gift History', f.giftHistory, '🎁', 'giftHistory')}
+                    ${renderField('Gift Ideas', f.giftIdeas, '💡', 'giftIdeas')}
                 </div>
             </div>
         `;
