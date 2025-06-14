@@ -94,9 +94,9 @@ function renderTagFilters() {
     filterBar.id = 'filterBar';
     filterBar.className = 'filter-bar';
     filterBar.innerHTML = `
-        <button class="filter-btn${!activeTagFilter ? ' active' : ''}" onclick="window.setTagFilter(null)">All</button>
-        <button class="filter-btn${activeTagFilter==='birthdays' ? ' active' : ''}" onclick="window.setTagFilter('birthdays')">🎂 Birthdays Soon</button>
-        <button class="filter-btn${activeTagFilter==='vegan' ? ' active' : ''}" onclick="window.setTagFilter('vegan')">🌱 Vegan Friends</button>
+        <button class="filter-btn${!activeTagFilter ? ' active' : ''}" data-type="all" onclick="window.setTagFilter(null)">All</button>
+        <button class="filter-btn${activeTagFilter==='birthdays' ? ' active' : ''}" data-type="birthdays" onclick="window.setTagFilter('birthdays')">🎂 Birthdays Soon</button>
+        <button class="filter-btn${activeTagFilter==='vegan' ? ' active' : ''}" data-type="vegan" onclick="window.setTagFilter('vegan')">🌱 Vegan Friends</button>
         <button class="filter-btn add-filter-btn" title="Add custom filter" onclick="window.openAddFilterModal()">+</button>
     `;
     friendsList.parentNode.insertBefore(filterBar, friendsList);
@@ -205,6 +205,7 @@ renderTagFilters = function() {
         window.customFilters.forEach((filter, i) => {
             const btn = document.createElement('button');
             btn.className = 'filter-btn' + (activeTagFilter===`custom${i}` ? ' active' : '');
+            btn.setAttribute('data-type', `custom${i}`);
             btn.textContent = filter.name;
             btn.onclick = () => {
                 activeTagFilter = `custom${i}`;
@@ -433,4 +434,136 @@ function deleteFriend(idx) {
         saveFriends();
         renderFriends();
     }
+}
+
+function renderFriendForm(friend = {}) {
+    // Render combobox for fields with dropdown options, else use text input
+    function renderComboOrText(name, label, value) {
+        if (DROPDOWN_OPTIONS[name]) {
+            return `<label>${label}
+                <input class="combobox-input" name="${name}" list="${name}List" value="${value || ''}" />
+                <datalist id="${name}List">
+                    ${DROPDOWN_OPTIONS[name].map(opt => `<option value="${opt}"></option>`).join('')}
+                </datalist>
+            </label>`;
+        } else {
+            return `<label>${label}
+                <input type="text" name="${name}" value="${value || ''}" />
+            </label>`;
+        }
+    }
+    return `
+        <label>Full Name
+            <input type="text" name="fullName" value="${friend.fullName || ''}" required />
+        </label>
+        <label>Nickname
+            <input type="text" name="nickname" value="${friend.nickname || ''}" />
+        </label>
+        <label>Birthday
+            <input type="date" name="birthday" value="${friend.birthday || ''}" />
+        </label>
+        ${renderComboOrText('relationship', 'Relationship', friend.relationship)}
+        ${renderComboOrText('clothingSize', 'Clothing Size', friend.clothingSize)}
+        ${renderComboOrText('brandPreferences', 'Brand Preferences', friend.brandPreferences)}
+        ${renderComboOrText('favoriteColor', 'Favorite Color', friend.favoriteColor)}
+        <label>Tags/Notes
+            <input type="text" name="tags" value="${friend.tags || ''}" />
+        </label>
+        <label>Notes
+            <textarea name="notes">${friend.notes || ''}</textarea>
+        </label>
+        ${renderComboOrText('foodPreferences', 'Food Preferences', friend.foodPreferences)}
+        ${renderComboOrText('dietaryRestrictions', 'Dietary Restrictions', friend.dietaryRestrictions)}
+        <label>Allergies
+            <input type="text" name="allergies" value="${friend.allergies || ''}" />
+        </label>
+        <label>Favorite Meals/Drinks/Desserts
+            <input type="text" name="favorites" value="${friend.favorites || ''}" />
+        </label>
+        ${renderComboOrText('giftHistory', 'Gift History', friend.giftHistory)}
+        <label>Gift Ideas
+            <input type="text" name="giftIdeas" value="${friend.giftIdeas || ''}" />
+        </label>
+        <div class="modal-actions">
+            <button type="submit">Save</button>
+            <button type="button" id="cancelBtn">Cancel</button>
+        </div>
+    `;
+}
+
+function attachDynamicDropdownListeners() {
+    // Enable dynamic addition of new dropdown options
+    const selects = friendForm.querySelectorAll('select[data-dropdown]');
+    selects.forEach(select => {
+        select.onchange = function() {
+            if (this.value === '__add_new__') {
+                const field = this.getAttribute('data-dropdown');
+                const newOption = prompt('Add new option:');
+                if (newOption) {
+                    // Add to dropdown options in memory
+                    if (!DROPDOWN_OPTIONS[field]) DROPDOWN_OPTIONS[field] = [];
+                    DROPDOWN_OPTIONS[field].push(newOption);
+                    // Save to localStorage for persistence
+                    localStorage.setItem('dropdown_options', JSON.stringify(DROPDOWN_OPTIONS));
+                    // Re-render the dropdown
+                    this.innerHTML = DROPDOWN_OPTIONS[field].map(opt => `<option value="${opt.toLowerCase()}">${opt}</option>`).join('') + '<option value="__add_new__">+ Add new...</option>';
+                    this.value = newOption.toLowerCase();
+                } else {
+                    this.value = '';
+                }
+            }
+        };
+    });
+}
+
+function attachComboboxListeners() {
+    // Enable basic combobox/autocomplete for any .combobox-input fields
+    const comboboxes = friendForm.querySelectorAll('.combobox-input');
+    comboboxes.forEach(input => {
+        const listId = input.getAttribute('aria-controls');
+        const list = listId ? document.getElementById(listId) : null;
+        if (!list) return;
+        input.oninput = function() {
+            const val = this.value.toLowerCase();
+            Array.from(list.children).forEach(option => {
+                option.style.display = option.textContent.toLowerCase().includes(val) ? '' : 'none';
+            });
+        };
+        input.onfocus = function() {
+            list.style.display = 'block';
+        };
+        input.onblur = function() {
+            setTimeout(() => { list.style.display = 'none'; }, 150);
+        };
+        Array.from(list.children).forEach(option => {
+            option.onclick = function() {
+                input.value = this.textContent;
+                list.style.display = 'none';
+            };
+        });
+    });
+}
+
+// Move form submit logic to a named function
+// In formSubmitHandler, after saving, add new value to options if not present
+function formSubmitHandler(e) {
+    e.preventDefault();
+    const formData = new FormData(friendForm);
+    const friend = {};
+    for (const [k, v] of formData.entries()) friend[k] = v.trim();
+    // Add new combobox values if not present
+    ['relationship','dietaryRestrictions','giftHistory','favoriteColor','clothingSize'].forEach(field => {
+        if (friend[field] && !DROPDOWN_OPTIONS[field].includes(friend[field])) {
+            DROPDOWN_OPTIONS[field].push(friend[field]);
+            localStorage.setItem('dropdown_options', JSON.stringify(DROPDOWN_OPTIONS));
+        }
+    });
+    if (editingIndex !== null) {
+        friends[editingIndex] = friend;
+    } else {
+        friends.push(friend);
+    }
+    saveFriends();
+    renderFriends();
+    closeModal();
 }
