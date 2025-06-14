@@ -333,3 +333,12 @@ renderFriends = function() {
     origRenderFriends();
     renderTagFilters();
 };
+
+// Delete friend function
+function deleteFriend(idx) {
+    if (confirm('Are you sure you want to delete this friend?')) {
+        friends.splice(idx, 1);
+        saveFriends();
+        renderFriends();
+    }
+}
