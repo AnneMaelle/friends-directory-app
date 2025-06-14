@@ -51,6 +51,12 @@ main#friendsList {
     min-width: 260px;
     max-width: 100%;
     box-sizing: border-box;
+    transition: box-shadow 0.25s, transform 0.22s;
+}
+.friend-card:hover {
+    box-shadow: 0 6px 24px rgba(74,144,226,0.18), 0 2px 12px rgba(80, 227, 194, 0.12);
+    transform: translateY(-6px) scale(1.025);
+    z-index: 10;
 }
 .friend-card .card-actions {
     position: absolute;
