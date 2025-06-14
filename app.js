@@ -74,6 +74,69 @@ function closeModal() {
     resetForm();
 }
 
+// Utility: Calculate days until next birthday
+function daysUntilBirthday(birthday) {
+    if (!birthday) return null;
+    const today = new Date();
+    const bday = new Date(birthday);
+    bday.setFullYear(today.getFullYear());
+    if (bday < today) bday.setFullYear(today.getFullYear() + 1);
+    const diff = Math.ceil((bday - today) / (1000 * 60 * 60 * 24));
+    return diff;
+}
+
+// Tag filter state
+let activeTagFilter = null;
+
+// Render tag filters at the top
+function renderTagFilters() {
+    const filterBar = document.getElementById('filterBar') || document.createElement('div');
+    filterBar.id = 'filterBar';
+    filterBar.className = 'filter-bar';
+    filterBar.innerHTML = `
+        <button class="filter-btn${!activeTagFilter ? ' active' : ''}" onclick="window.setTagFilter(null)">All</button>
+        <button class="filter-btn${activeTagFilter==='birthdays' ? ' active' : ''}" onclick="window.setTagFilter('birthdays')">🎂 Birthdays Soon</button>
+        <button class="filter-btn${activeTagFilter==='vegan' ? ' active' : ''}" onclick="window.setTagFilter('vegan')">🌱 Vegan Friends</button>
+        <button class="filter-btn add-filter-btn" title="Add custom filter" onclick="window.openAddFilterModal()">+</button>
+    `;
+    friendsList.parentNode.insertBefore(filterBar, friendsList);
+}
+window.setTagFilter = function(tag) {
+    activeTagFilter = tag;
+    renderFriends();
+    renderTagFilters();
+};
+
+// Add filter modal logic
+window.openAddFilterModal = function() {
+    const filterName = prompt('Enter a name for your custom filter:');
+    if (!filterName) return;
+    // Add a new filter button dynamically
+    if (!window.customFilters) window.customFilters = [];
+    window.customFilters.push(filterName);
+    renderTagFilters();
+};
+
+// Extend renderTagFilters to show custom filters
+const origRenderTagFilters = renderTagFilters;
+renderTagFilters = function() {
+    origRenderTagFilters();
+    const filterBar = document.getElementById('filterBar');
+    if (window.customFilters && window.customFilters.length) {
+        window.customFilters.forEach((name, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'filter-btn' + (activeTagFilter===`custom${i}` ? ' active' : '');
+            btn.textContent = name;
+            btn.onclick = () => {
+                activeTagFilter = `custom${i}`;
+                renderFriends();
+                renderTagFilters();
+            };
+            filterBar.insertBefore(btn, filterBar.querySelector('.add-filter-btn'));
+        });
+    }
+};
+
 // Render
 function renderFriends() {
     friendsList.innerHTML = '';
@@ -81,9 +144,57 @@ function renderFriends() {
         friendsList.innerHTML = '<p>No friends added yet.</p>';
         return;
     }
-    friends.forEach((f, idx) => {
+    // Filter friends by tag
+    let filtered = friends;
+    if (activeTagFilter === 'birthdays') {
+        filtered = friends.filter(f => {
+            const days = daysUntilBirthday(f.birthday);
+            return days !== null && days <= 30;
+        });
+    } else if (activeTagFilter === 'vegan') {
+        filtered = friends.filter(f => (f.dietaryRestrictions||'').toLowerCase().includes('vegan'));
+    }
+    filtered.forEach((f, idx) => {
         const card = document.createElement('div');
         card.className = 'friend-card';
+        card.setAttribute('draggable', 'true');
+        card.setAttribute('data-idx', idx);
+        // Drag events
+        card.ondragstart = function(e) {
+            e.dataTransfer.setData('text/plain', idx);
+            card.classList.add('dragging');
+        };
+        card.ondragend = function() {
+            card.classList.remove('dragging');
+        };
+        card.ondragover = function(e) {
+            e.preventDefault();
+            card.classList.add('drag-over');
+        };
+        card.ondragleave = function() {
+            card.classList.remove('drag-over');
+        };
+        card.ondrop = function(e) {
+            e.preventDefault();
+            card.classList.remove('drag-over');
+            const fromIdx = +e.dataTransfer.getData('text/plain');
+            const toIdx = idx;
+            if (fromIdx !== toIdx) {
+                const moved = filtered.splice(fromIdx, 1)[0];
+                filtered.splice(toIdx, 0, moved);
+                // Update main friends array
+                if (filtered.length === friends.length) {
+                    friends = filtered;
+                } else {
+                    // If filtered, reorder only visible subset
+                    const origIdx = friends.indexOf(moved);
+                    friends.splice(origIdx, 1);
+                    friends.splice(toIdx, 0, moved);
+                }
+                saveFriends();
+                renderFriends();
+            }
+        };
         // Helper to render a field or a + Add link if empty
         function renderField(label, value, icon, fieldName) {
             if (value && value !== '-') {
@@ -92,12 +203,23 @@ function renderFriends() {
                 return `<p class="add-field"><span title="${label}">${icon}</span> <strong>${label}:</strong> <a href="#" onclick="editFriend(${idx});event.preventDefault();" class="add-link">+ Add</a></p>`;
             }
         }
+        // Birthday badge
+        let birthdayBadge = '';
+        const days = daysUntilBirthday(f.birthday);
+        if (days !== null && !isNaN(days)) {
+            if (days === 0) {
+                birthdayBadge = '<span class="birthday-badge today">🎉 Birthday Today!</span>';
+            } else {
+                birthdayBadge = `<div class="birthday-badge" style="font-style:italic;font-size:0.98em;margin-top:0.2em;">🎂 Next birthday in ${days} day${days>1?'s':''}</div>`;
+            }
+        }
         card.innerHTML = `
             <div class="card-actions">
                 <button class="icon-btn" title="Edit" onclick="editFriend(${idx})">✏️</button>
                 <button class="icon-btn" title="Delete" onclick="deleteFriend(${idx})">🗑️</button>
             </div>
             <h3>${f.fullName} ${f.nickname ? `(${f.nickname})` : ''}</h3>
+            ${birthdayBadge}
             <div class="card-section">
                 <button class="section-toggle" onclick="toggleSection(this)">Personal Info</button>
                 <div class="section-content">
@@ -129,156 +251,6 @@ function renderFriends() {
         `;
         friendsList.appendChild(card);
     });
-}
-function renderDropdown(name, selectedValue) {
-    const options = DROPDOWN_OPTIONS[name] || [];
-    let html = `<select name="${name}" data-dropdown="${name}">` +
-        options.map(opt => `<option value="${opt.toLowerCase() || ''}"${selectedValue === opt.toLowerCase() ? ' selected' : ''}>${opt || 'Select...'}</option>`).join('');
-    html += `<option value="__add_new__">+ Add new...</option></select>`;
-    return html;
-}
-function renderCombobox(name, value) {
-    const options = DROPDOWN_OPTIONS[name] || [];
-    return `
-      <div class="combobox-wrapper" style="position:relative;">
-        <input type="text" name="${name}" class="combobox-input" autocomplete="off" value="${value || ''}" data-combobox="${name}" placeholder="Type or select..." />
-        <div class="combobox-list" style="display:none; position:absolute; background:#fff; border:1px solid #ccc; z-index:10; max-height:120px; overflow-y:auto;"></div>
-      </div>
-    `;
-}
-function renderFriendForm(friend = {}) {
-    return `
-        <h2 id="modalTitle">${editingIndex !== null ? 'Edit Friend' : 'Add Friend'}</h2>
-        <label>Full Name <input type="text" name="fullName" value="${friend.fullName || ''}" required></label>
-        <label>Nickname <input type="text" name="nickname" value="${friend.nickname || ''}"></label>
-        <label>Birthday <input type="date" name="birthday" value="${friend.birthday || ''}"></label>
-        <label>Relationship Type
-            ${renderCombobox('relationship', friend.relationship)}
-        </label>
-        <label>Food Preferences <input type="text" name="foodPreferences" value="${friend.foodPreferences || ''}"></label>
-        <label>Dietary Restrictions
-            ${renderCombobox('dietaryRestrictions', friend.dietaryRestrictions)}
-        </label>
-        <label>Allergies / Food Phobias <input type="text" name="allergies" value="${friend.allergies || ''}"></label>
-        <label>Favorite Meals/Drinks/Desserts <input type="text" name="favorites" value="${friend.favorites || ''}"></label>
-        <label>Gift History
-            ${renderCombobox('giftHistory', friend.giftHistory)}
-        </label>
-        <label>Future Gift Ideas <input type="text" name="giftIdeas" value="${friend.giftIdeas || ''}"></label>
-        <label>Tags/Notes <input type="text" name="tags" value="${friend.tags || ''}"></label>
-        <label>Favorite Color
-            ${renderCombobox('favoriteColor', friend.favoriteColor)}
-        </label>
-        <label>Clothing Size
-            ${renderCombobox('clothingSize', friend.clothingSize)}
-        </label>
-        <label>Perfume/Brand Preferences <input type="text" name="brandPreferences" value="${friend.brandPreferences || ''}"></label>
-        <label>Personal Notes <textarea name="notes">${friend.notes || ''}</textarea></label>
-        <div class="modal-actions">
-            <button type="submit">Save</button>
-            <button type="button" id="cancelBtn">Cancel</button>
-        </div>
-    `;
-}
-
-// Handle dynamic add for dropdowns
-function handleDropdownAddNew(e) {
-    const select = e.target;
-    if (select.value === '__add_new__') {
-        const dropdownName = select.getAttribute('data-dropdown');
-        setTimeout(() => {
-            const newOption = prompt(`Add new option for ${dropdownName}:`);
-            if (newOption && !DROPDOWN_OPTIONS[dropdownName].includes(newOption)) {
-                DROPDOWN_OPTIONS[dropdownName].push(newOption);
-                localStorage.setItem('dropdown_options', JSON.stringify(DROPDOWN_OPTIONS));
-                // Re-render the form with the new option selected
-                const formData = new FormData(friendForm);
-                const friend = {};
-                for (const [k, v] of formData.entries()) friend[k] = v;
-                friend[dropdownName] = newOption.toLowerCase();
-                friendForm.innerHTML = renderFriendForm(friend);
-                attachDynamicDropdownListeners();
-                attachComboboxListeners();
-                friendForm.onsubmit = formSubmitHandler;
-                document.getElementById('cancelBtn').onclick = closeModal;
-            } else {
-                // Reset selection if cancelled or duplicate
-                select.value = '';
-            }
-        }, 100);
-    }
-}
-
-function attachDynamicDropdownListeners() {
-    friendForm.querySelectorAll('select[data-dropdown]').forEach(sel => {
-        sel.addEventListener('change', handleDropdownAddNew);
-    });
-}
-function attachComboboxListeners() {
-    friendForm.querySelectorAll('.combobox-wrapper').forEach(wrapper => {
-        const input = wrapper.querySelector('.combobox-input');
-        const list = wrapper.querySelector('.combobox-list');
-        const name = input.getAttribute('data-combobox');
-        input.addEventListener('input', function() {
-            const val = input.value.toLowerCase();
-            const opts = (DROPDOWN_OPTIONS[name] || []).filter(opt => opt.toLowerCase().includes(val) && opt);
-            if (opts.length > 0) {
-                list.innerHTML = opts.map(opt => `<div class="combobox-item" style="padding:4px 8px; cursor:pointer;">${opt}</div>`).join('');
-                list.style.display = 'block';
-            } else {
-                list.innerHTML = '';
-                list.style.display = 'none';
-            }
-        });
-        input.addEventListener('focus', function() {
-            input.dispatchEvent(new Event('input'));
-        });
-        input.addEventListener('blur', function() {
-            setTimeout(() => { list.style.display = 'none'; }, 200);
-        });
-        list.addEventListener('mousedown', function(e) {
-            if (e.target.classList.contains('combobox-item')) {
-                input.value = e.target.textContent;
-                list.style.display = 'none';
-            }
-        });
-    });
-}
-
-// Add/Edit/Delete
-window.editFriend = function(idx) {
-    openModal(idx);
-};
-window.deleteFriend = function(idx) {
-    if (confirm('Delete this friend?')) {
-        friends.splice(idx, 1);
-        saveFriends();
-        renderFriends();
-    }
-};
-
-// Move form submit logic to a named function
-// In formSubmitHandler, after saving, add new value to options if not present
-function formSubmitHandler(e) {
-    e.preventDefault();
-    const formData = new FormData(friendForm);
-    const friend = {};
-    for (const [k, v] of formData.entries()) friend[k] = v.trim();
-    // Add new combobox values if not present
-    ['relationship','dietaryRestrictions','giftHistory','favoriteColor','clothingSize'].forEach(field => {
-        if (friend[field] && !DROPDOWN_OPTIONS[field].includes(friend[field])) {
-            DROPDOWN_OPTIONS[field].push(friend[field]);
-            localStorage.setItem('dropdown_options', JSON.stringify(DROPDOWN_OPTIONS));
-        }
-    });
-    if (editingIndex !== null) {
-        friends[editingIndex] = friend;
-    } else {
-        friends.push(friend);
-    }
-    saveFriends();
-    renderFriends();
-    closeModal();
 }
 
 // Collapsible section logic
@@ -354,3 +326,10 @@ floatingAddBtn.title = 'Add Friend';
 floatingAddBtn.innerText = '+';
 floatingAddBtn.onclick = () => openModal();
 document.body.appendChild(floatingAddBtn);
+
+// After renderFriends, also render tag filters
+const origRenderFriends = renderFriends;
+renderFriends = function() {
+    origRenderFriends();
+    renderTagFilters();
+};
