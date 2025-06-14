@@ -109,12 +109,48 @@ window.setTagFilter = function(tag) {
 
 // Add filter modal logic
 window.openAddFilterModal = function() {
-    const filterName = prompt('Enter a name for your custom filter:');
-    if (!filterName) return;
-    // Add a new filter button dynamically
-    if (!window.customFilters) window.customFilters = [];
-    window.customFilters.push(filterName);
-    renderTagFilters();
+    // Create modal overlay
+    let modal = document.getElementById('customFilterModal');
+    if (modal) modal.remove();
+    modal = document.createElement('div');
+    modal.id = 'customFilterModal';
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.width = '100vw';
+    modal.style.height = '100vh';
+    modal.style.background = 'rgba(0,0,0,0.25)';
+    modal.style.display = 'flex';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
+    modal.style.zIndex = '3000';
+    modal.innerHTML = `
+      <form id="customFilterForm" style="background:#fff;padding:2rem 2.5rem;border-radius:12px;box-shadow:0 4px 24px rgba(74,144,226,0.13);display:flex;flex-direction:column;gap:1.2rem;min-width:320px;max-width:90vw;">
+        <h2 style="margin:0 0 0.5em 0;font-size:1.3em;color:#4a90e2;">Add Custom Filter</h2>
+        <label style="font-weight:500;">Filter Name
+          <input type="text" name="filterName" required placeholder="e.g. Cheese Lovers" style="margin-top:0.3em;padding:0.5em;font-size:1em;">
+        </label>
+        <label style="font-weight:500;">Query (e.g. <i>foodPreferences contains cheese</i>)
+          <input type="text" name="filterQuery" required placeholder="e.g. foodPreferences contains cheese" style="margin-top:0.3em;padding:0.5em;font-size:1em;">
+        </label>
+        <div style="display:flex;gap:1em;justify-content:flex-end;">
+          <button type="button" id="cancelCustomFilter" style="background:#eee;color:#4a90e2;border:none;padding:0.5em 1.2em;border-radius:5px;cursor:pointer;">Cancel</button>
+          <button type="submit" style="background:linear-gradient(135deg,#4a90e2 60%,#50e3c2 100%);color:#fff;border:none;padding:0.5em 1.2em;border-radius:5px;cursor:pointer;font-weight:600;">Add</button>
+        </div>
+      </form>
+    `;
+    document.body.appendChild(modal);
+    document.getElementById('cancelCustomFilter').onclick = () => modal.remove();
+    document.getElementById('customFilterForm').onsubmit = function(e) {
+        e.preventDefault();
+        const name = this.filterName.value.trim();
+        const query = this.filterQuery.value.trim();
+        if (!name || !query) return;
+        if (!window.customFilters) window.customFilters = [];
+        window.customFilters.push({ name, query });
+        modal.remove();
+        renderTagFilters();
+    };
 };
 
 // Extend renderTagFilters to show custom filters
@@ -123,10 +159,10 @@ renderTagFilters = function() {
     origRenderTagFilters();
     const filterBar = document.getElementById('filterBar');
     if (window.customFilters && window.customFilters.length) {
-        window.customFilters.forEach((name, i) => {
+        window.customFilters.forEach((filter, i) => {
             const btn = document.createElement('button');
             btn.className = 'filter-btn' + (activeTagFilter===`custom${i}` ? ' active' : '');
-            btn.textContent = name;
+            btn.textContent = filter.name;
             btn.onclick = () => {
                 activeTagFilter = `custom${i}`;
                 renderFriends();
@@ -139,20 +175,36 @@ renderTagFilters = function() {
 
 // Render
 function renderFriends() {
-    friendsList.innerHTML = '';
-    if (friends.length === 0) {
-        friendsList.innerHTML = '<p>No friends added yet.</p>';
-        return;
-    }
-    // Filter friends by tag
     let filtered = friends;
-    if (activeTagFilter === 'birthdays') {
+    if (activeTagFilter && activeTagFilter.startsWith('custom')) {
+        const idx = parseInt(activeTagFilter.replace('custom', ''));
+        const filter = window.customFilters && window.customFilters[idx];
+        if (filter) {
+            // Parse query: e.g. 'foodPreferences contains cheese'
+            const match = filter.query.match(/^(\w+)\s+contains\s+(.+)$/i);
+            if (match) {
+                const field = match[1];
+                const value = match[2].toLowerCase();
+                filtered = friends.filter(f => (f[field]||'').toString().toLowerCase().includes(value));
+            } else {
+                // fallback: search all fields for the query string
+                const keyword = filter.query.toLowerCase();
+                filtered = friends.filter(f => Object.values(f).some(val => (val||'').toString().toLowerCase().includes(keyword)));
+            }
+        }
+    }
+    else if (activeTagFilter === 'birthdays') {
         filtered = friends.filter(f => {
             const days = daysUntilBirthday(f.birthday);
             return days !== null && days <= 30;
         });
     } else if (activeTagFilter === 'vegan') {
         filtered = friends.filter(f => (f.dietaryRestrictions||'').toLowerCase().includes('vegan'));
+    }
+    friendsList.innerHTML = '';
+    if (filtered.length === 0) {
+        friendsList.innerHTML = '<p>No friends added yet.</p>';
+        return;
     }
     filtered.forEach((f, idx) => {
         const card = document.createElement('div');
