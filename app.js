@@ -86,8 +86,8 @@ function renderFriends() {
         card.className = 'friend-card';
         card.innerHTML = `
             <div class="card-actions">
-                <button onclick="editFriend(${idx})">Edit</button>
-                <button onclick="deleteFriend(${idx})">Delete</button>
+                <button class="icon-btn" title="Edit" onclick="editFriend(${idx})">✏️</button>
+                <button class="icon-btn" title="Delete" onclick="deleteFriend(${idx})">🗑️</button>
             </div>
             <h3>${f.fullName} ${f.nickname ? `(${f.nickname})` : ''}</h3>
             <p><strong>Birthday:</strong> ${f.birthday || '-'}</p>
@@ -311,3 +311,11 @@ importFile.onchange = function(e) {
     friendModal.classList.add('hidden');
     friendModal.style.display = 'none';
 })();
+
+// Floating Add Friend Button
+const floatingAddBtn = document.createElement('button');
+floatingAddBtn.id = 'floatingAddBtn';
+floatingAddBtn.title = 'Add Friend';
+floatingAddBtn.innerText = '+';
+floatingAddBtn.onclick = () => openModal();
+document.body.appendChild(floatingAddBtn);

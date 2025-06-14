@@ -69,6 +69,20 @@ main#friendsList {
 .friend-card button:hover {
     background: #e6f0fa;
 }
+.friend-card .icon-btn {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    padding: 0.2rem 0.5rem;
+    transition: transform 0.1s, background 0.2s;
+    color: #4a90e2;
+    border-radius: 4px;
+}
+.friend-card .icon-btn:hover {
+    transform: scale(1.2);
+    background: #e6f0fa;
+}
 .modal {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -137,6 +151,34 @@ main#friendsList {
 }
 .combobox-list {
     min-width: 100%;
+}
+#floatingAddBtn {
+    position: fixed;
+    right: 2rem;
+    bottom: 2rem;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4a90e2 60%, #50e3c2 100%);
+    color: #fff;
+    font-size: 2.5rem;
+    border: none;
+    box-shadow: 0 4px 16px rgba(80, 227, 194, 0.18), 0 1.5px 8px rgba(74,144,226,0.18);
+    cursor: pointer;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: floatPulse 2s infinite;
+    transition: background 0.2s, transform 0.2s;
+}
+#floatingAddBtn:hover {
+    background: linear-gradient(135deg, #50e3c2 60%, #4a90e2 100%);
+    transform: scale(1.08) rotate(-8deg);
+}
+@keyframes floatPulse {
+    0%, 100% { box-shadow: 0 4px 16px rgba(80, 227, 194, 0.18), 0 1.5px 8px rgba(74,144,226,0.18); }
+    50% { box-shadow: 0 8px 32px rgba(80, 227, 194, 0.28), 0 3px 16px rgba(74,144,226,0.28); }
 }
 @media (max-width: 900px) {
     main#friendsList {
