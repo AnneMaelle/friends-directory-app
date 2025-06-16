@@ -60,18 +60,122 @@ function openModal(editIdx = null) {
     } else {
         editingIndex = null;
     }
-    friendForm.innerHTML = renderFriendForm(friend);
-    attachDynamicDropdownListeners();
-    attachComboboxListeners();
-    document.getElementById('cancelBtn').onclick = closeModal;
-    friendForm.onsubmit = formSubmitHandler;
+    // Render multi-step wizard
+    renderFriendWizard(friend);
 }
-function closeModal() {
-    friendModal.classList.add('hidden');
-    setTimeout(() => {
-        friendModal.style.display = 'none';
-    }, 200);
-    resetForm();
+
+// Multi-step wizard state
+let wizardStep = 0;
+let wizardData = {};
+
+function renderFriendWizard(friend = {}) {
+    wizardStep = 0;
+    wizardData = { ...friend };
+    updateWizardStep();
+}
+
+function updateWizardStep() {
+    const steps = [
+        {
+            title: 'Personal Info',
+            fields: [
+                { name: 'fullName', label: 'Full Name', type: 'text', required: true },
+                { name: 'nickname', label: 'Nickname', type: 'text' },
+                { name: 'birthday', label: 'Birthday', type: 'date' },
+                { name: 'relationship', label: 'Relationship', type: 'combo' }
+            ]
+        },
+        {
+            title: 'Preferences',
+            fields: [
+                { name: 'foodPreferences', label: 'Food Preferences', type: 'combo' },
+                { name: 'dietaryRestrictions', label: 'Dietary Restrictions', type: 'combo' },
+                { name: 'allergies', label: 'Allergies', type: 'text' },
+                { name: 'favorites', label: 'Favorite Meals/Drinks/Desserts', type: 'text' }
+            ]
+        },
+        {
+            title: 'Gifts & Notes',
+            fields: [
+                { name: 'giftHistory', label: 'Gift History', type: 'combo' },
+                { name: 'giftIdeas', label: 'Gift Ideas', type: 'text' },
+                { name: 'tags', label: 'Tags/Notes', type: 'text' },
+                { name: 'notes', label: 'Notes', type: 'textarea' }
+            ]
+        }
+    ];
+    const step = steps[wizardStep];
+    let progressDots = `<div class="friend-wizard-steps">`;
+    for (let i = 0; i < steps.length; i++) {
+        progressDots += `<span class="friend-wizard-dot${i === wizardStep ? ' active' : ''}"></span>`;
+    }
+    progressDots += `</div>`;
+    let progressBar = `<div class="friend-wizard-progress"><div class="friend-wizard-progress-bar" style="width:${((wizardStep+1)/steps.length)*100}%"></div></div>`;
+    let fieldsHtml = step.fields.map(f => {
+        if (f.type === 'combo') {
+            return `<label>${f.label}
+                <input class="combobox-input" name="${f.name}" list="${f.name}List" value="${wizardData[f.name]||''}" ${f.required?'required':''} />
+                <datalist id="${f.name}List">
+                    ${(DROPDOWN_OPTIONS[f.name]||[]).map(opt => `<option value="${opt}"></option>`).join('')}
+                </datalist>
+            </label>`;
+        } else if (f.type === 'textarea') {
+            return `<label>${f.label}
+                <textarea name="${f.name}">${wizardData[f.name]||''}</textarea>
+            </label>`;
+        } else {
+            return `<label>${f.label}
+                <input type="${f.type}" name="${f.name}" value="${wizardData[f.name]||''}" ${f.required?'required':''} />
+            </label>`;
+        }
+    }).join('');
+    friendForm.innerHTML = `
+        <h2 style="margin-bottom:0.5em;">${step.title}</h2>
+        ${progressDots}
+        ${progressBar}
+        <div id="wizardStepFields" class="friend-wizard-section">${fieldsHtml}</div>
+        <div class="modal-actions">
+            ${wizardStep > 0 ? '<button type="button" id="wizardPrevBtn">Back</button>' : ''}
+            ${wizardStep < steps.length-1 ? '<button type="button" id="wizardNextBtn">Next</button>' : '<button type="submit" id="wizardSaveBtn">Save</button>'}
+            <button type="button" id="cancelBtn">Cancel</button>
+        </div>
+    `;
+    document.getElementById('cancelBtn').onclick = closeModal;
+    if (wizardStep > 0) document.getElementById('wizardPrevBtn').onclick = () => { wizardStep--; updateWizardStep(); };
+    if (wizardStep < steps.length-1) document.getElementById('wizardNextBtn').onclick = () => {
+        if (saveWizardStepFields()) { wizardStep++; updateWizardStep(); }
+    };
+    else document.getElementById('wizardSaveBtn').onclick = (e) => { e.preventDefault(); if (saveWizardStepFields(true)) saveWizardFriend(); };
+}
+function saveWizardStepFields(isFinal) {
+    const fieldsDiv = document.getElementById('wizardStepFields');
+    const inputs = fieldsDiv.querySelectorAll('input, textarea, select');
+    for (const input of inputs) {
+        wizardData[input.name] = input.value.trim();
+    }
+    // Validate required fields on first step
+    if (wizardStep === 0 && !wizardData.fullName) {
+        fieldsDiv.querySelector('[name="fullName"]').focus();
+        return false;
+    }
+    return true;
+}
+function saveWizardFriend() {
+    // Add new combobox values if not present
+    ['relationship','dietaryRestrictions','giftHistory','favoriteColor','clothingSize'].forEach(field => {
+        if (wizardData[field] && DROPDOWN_OPTIONS[field] && !DROPDOWN_OPTIONS[field].includes(wizardData[field])) {
+            DROPDOWN_OPTIONS[field].push(wizardData[field]);
+            localStorage.setItem('dropdown_options', JSON.stringify(DROPDOWN_OPTIONS));
+        }
+    });
+    if (editingIndex !== null) {
+        friends[editingIndex] = { ...wizardData };
+    } else {
+        friends.push({ ...wizardData });
+    }
+    saveFriends();
+    renderFriends();
+    closeModal();
 }
 
 // Utility: Calculate days until next birthday
@@ -631,3 +735,11 @@ window.deleteFriend = function(idx) {
         renderFriends();
     }
 };
+
+function closeModal() {
+    friendModal.classList.add('hidden');
+    setTimeout(() => {
+        friendModal.style.display = 'none';
+    }, 200);
+    resetForm();
+}
