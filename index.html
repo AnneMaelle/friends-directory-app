@@ -5,15 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Friends Directory</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-    <header>
-        <h1>Friends Directory</h1>
-        <button id="addFriendBtn">Add Friend</button>
-        <button id="exportBtn">Export JSON</button>
-        <button id="importBtn">Import JSON</button>
-        <input type="file" id="importFile" style="display:none" accept="application/json">
+    <header class="topbar">
+        <div class="header-left">
+            <h1 class="app-title">Friends Directory</h1>
+        </div>
+        <div class="header-actions">
+            <button id="addFriendBtn" title="Add Friend"><span class="icon">➕</span><span class="btn-label">Add</span></button>
+            <button id="exportBtn" title="Export JSON"><span class="icon">⬇️</span><span class="btn-label">Export</span></button>
+            <button id="importBtn" title="Import JSON"><span class="icon">⬆️</span><span class="btn-label">Import</span></button>
+            <input type="file" id="importFile" style="display:none" accept="application/json">
+        </div>
     </header>
+    <div id="filterBarContainer"></div>
     <main id="friendsList">
         <!-- Friend cards will be rendered here -->
     </main>

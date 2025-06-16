@@ -88,18 +88,29 @@ function daysUntilBirthday(birthday) {
 // Tag filter state
 let activeTagFilter = null;
 
-// Render tag filters at the top
+// Move filter bar into #filterBarContainer for new layout
 function renderTagFilters() {
-    const filterBar = document.getElementById('filterBar') || document.createElement('div');
-    filterBar.id = 'filterBar';
-    filterBar.className = 'filter-bar';
+    let filterBar = document.getElementById('filterBar');
+    if (!filterBar) {
+        filterBar = document.createElement('div');
+        filterBar.id = 'filterBar';
+        filterBar.className = 'filter-bar';
+    }
     filterBar.innerHTML = `
         <button class="filter-btn${!activeTagFilter ? ' active' : ''}" data-type="all" onclick="window.setTagFilter(null)">All</button>
         <button class="filter-btn${activeTagFilter==='birthdays' ? ' active' : ''}" data-type="birthdays" onclick="window.setTagFilter('birthdays')">🎂 Birthdays Soon</button>
         <button class="filter-btn${activeTagFilter==='vegan' ? ' active' : ''}" data-type="vegan" onclick="window.setTagFilter('vegan')">🌱 Vegan Friends</button>
         <button class="filter-btn add-filter-btn" title="Add custom filter" onclick="window.openAddFilterModal()">+</button>
     `;
-    friendsList.parentNode.insertBefore(filterBar, friendsList);
+    // Insert filterBar into the new container
+    let filterBarContainer = document.getElementById('filterBarContainer');
+    if (!filterBarContainer) {
+        filterBarContainer = document.createElement('div');
+        filterBarContainer.id = 'filterBarContainer';
+        document.body.insertBefore(filterBarContainer, document.getElementById('friendsList'));
+    }
+    filterBarContainer.innerHTML = '';
+    filterBarContainer.appendChild(filterBar);
 }
 window.setTagFilter = function(tag) {
     activeTagFilter = tag;
