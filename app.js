@@ -402,10 +402,43 @@ importFile.onchange = function(e) {
     reader.readAsText(file);
 };
 
-// Init
+// --- Custom Filters Persistence ---
+const CUSTOM_FILTERS_KEY = 'friendsDirectoryCustomFilters';
+function saveCustomFilters() {
+    localStorage.setItem(CUSTOM_FILTERS_KEY, JSON.stringify(window.customFilters || []));
+}
+function loadCustomFilters() {
+    const data = localStorage.getItem(CUSTOM_FILTERS_KEY);
+    window.customFilters = data ? JSON.parse(data) : [];
+}
+
+// Patch openAddFilterModal to save after adding
+const origOpenAddFilterModal = window.openAddFilterModal;
+window.openAddFilterModal = function() {
+    origOpenAddFilterModal.apply(this, arguments);
+    // Patch the submit handler to save after adding
+    const form = document.getElementById('customFilterForm');
+    if (form) {
+        const origSubmit = form.onsubmit;
+        form.onsubmit = function(e) {
+            origSubmit.call(this, e);
+            saveCustomFilters();
+        };
+    }
+};
+
+// Patch renderTagFilters to load from storage if needed
+const origRenderTagFilters2 = renderTagFilters;
+renderTagFilters = function() {
+    if (!window.customFilters) loadCustomFilters();
+    origRenderTagFilters2();
+};
+
+// On init, load custom filters
 (async function init() {
     await loadDropdownOptions();
     loadFriends();
+    loadCustomFilters();
     renderFriends();
     // On page load, ensure modal is hidden
     friendModal.classList.add('hidden');
@@ -517,29 +550,37 @@ function attachDynamicDropdownListeners() {
 }
 
 function attachComboboxListeners() {
-    // Enable basic combobox/autocomplete for any .combobox-input fields
-    const comboboxes = friendForm.querySelectorAll('.combobox-input');
-    comboboxes.forEach(input => {
-        const listId = input.getAttribute('aria-controls');
-        const list = listId ? document.getElementById(listId) : null;
-        if (!list) return;
-        input.oninput = function() {
-            const val = this.value.toLowerCase();
-            Array.from(list.children).forEach(option => {
-                option.style.display = option.textContent.toLowerCase().includes(val) ? '' : 'none';
-            });
-        };
-        input.onfocus = function() {
-            list.style.display = 'block';
-        };
-        input.onblur = function() {
-            setTimeout(() => { list.style.display = 'none'; }, 150);
-        };
-        Array.from(list.children).forEach(option => {
-            option.onclick = function() {
-                input.value = this.textContent;
+    friendForm.querySelectorAll('.combobox-wrapper').forEach(wrapper => {
+        const input = wrapper.querySelector('.combobox-input');
+        const list = wrapper.querySelector('.combobox-list');
+        const name = input.getAttribute('data-combobox');
+        input.addEventListener('input', function() {
+            const val = input.value.toLowerCase();
+            const opts = (DROPDOWN_OPTIONS[name] || []).filter(opt => opt.toLowerCase().includes(val) && opt);
+            if (opts.length > 0) {
+                list.innerHTML = opts.map(opt => `<div class="combobox-item" style="padding:4px 8px; cursor:pointer;">${opt}</div>`).join('');
+                list.style.display = 'block';
+            } else {
+                list.innerHTML = '';
                 list.style.display = 'none';
-            };
+            }
+        });
+        input.addEventListener('focus', function() {
+            input.dispatchEvent(new Event('input'));
+        });
+        input.addEventListener('blur', function() {
+            setTimeout(() => { list.style.display = 'none'; }, 200);
+        });
+        list.addEventListener('mousedown', function(e) {
+            if (e.target.classList.contains('combobox-item')) {
+                input.value = e.target.textContent;
+                // Save to localStorage if new value
+                if (input.value && !DROPDOWN_OPTIONS[name].includes(input.value)) {
+                    DROPDOWN_OPTIONS[name].push(input.value);
+                    localStorage.setItem('dropdown_options', JSON.stringify(DROPDOWN_OPTIONS));
+                }
+                list.style.display = 'none';
+            }
         });
     });
 }
@@ -567,3 +608,15 @@ function formSubmitHandler(e) {
     renderFriends();
     closeModal();
 }
+
+// Re-add global editFriend and deleteFriend functions
+window.editFriend = function(idx) {
+    openModal(idx);
+};
+window.deleteFriend = function(idx) {
+    if (confirm('Delete this friend?')) {
+        friends.splice(idx, 1);
+        saveFriends();
+        renderFriends();
+    }
+};
