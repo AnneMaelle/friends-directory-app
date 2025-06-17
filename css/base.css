@@ -1,0 +1,13 @@
+body {
+    font-family: 'Inter', 'Poppins', Arial, sans-serif;
+    background: #f7f7fa;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 2rem auto 2rem auto;
+    width: 100%;
+    box-sizing: border-box;
+}

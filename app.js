@@ -114,18 +114,18 @@ function updateWizardStep() {
     let fieldsHtml = step.fields.map(f => {
         let requiredStar = f.required ? '<span style="color:#e74c3c;font-weight:bold;margin-left:0.25em;vertical-align:middle;">*</span>' : '';
         if (f.type === 'combo') {
-            return `<label style="display:flex;align-items:left;gap:0.3em;"><span>${f.label}${requiredStar}</span>
+            return `<label style="display:flex;align-items:center;gap:0.3em;"><span>${f.label}${requiredStar}</span>
                 <input class="combobox-input" name="${f.name}" list="${f.name}List" value="${wizardData[f.name]||''}" ${f.required?'required':''} />
                 <datalist id="${f.name}List">
                     ${(DROPDOWN_OPTIONS[f.name]||[]).map(opt => `<option value="${opt}"></option>`).join('')}
                 </datalist>
             </label>`;
         } else if (f.type === 'textarea') {
-            return `<label style="display:flex;align-items:left;gap:0.3em;"><span>${f.label}${requiredStar}</span>
+            return `<label style="display:flex;align-items:center;gap:0.3em;"><span>${f.label}${requiredStar}</span>
                 <textarea name="${f.name}">${wizardData[f.name]||''}</textarea>
             </label>`;
         } else {
-            return `<label style="display:flex;align-items:left;gap:0.3em;"><span>${f.label}${requiredStar}</span>
+            return `<label style="display:flex;align-items:center;gap:0.3em;"><span>${f.label}${requiredStar}</span>
                 <input type="${f.type}" name="${f.name}" value="${wizardData[f.name]||''}" ${f.required?'required':''} />
             </label>`;
         }
