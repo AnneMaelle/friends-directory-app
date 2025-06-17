@@ -112,19 +112,20 @@ function updateWizardStep() {
     progressDots += `</div>`;
     let progressBar = `<div class="friend-wizard-progress"><div class="friend-wizard-progress-bar" style="width:${((wizardStep+1)/steps.length)*100}%"></div></div>`;
     let fieldsHtml = step.fields.map(f => {
+        let requiredStar = f.required ? '<span style="color:#e74c3c;font-weight:bold;margin-left:0.25em;vertical-align:middle;">*</span>' : '';
         if (f.type === 'combo') {
-            return `<label>${f.label}
+            return `<label style="display:flex;align-items:left;gap:0.3em;"><span>${f.label}${requiredStar}</span>
                 <input class="combobox-input" name="${f.name}" list="${f.name}List" value="${wizardData[f.name]||''}" ${f.required?'required':''} />
                 <datalist id="${f.name}List">
                     ${(DROPDOWN_OPTIONS[f.name]||[]).map(opt => `<option value="${opt}"></option>`).join('')}
                 </datalist>
             </label>`;
         } else if (f.type === 'textarea') {
-            return `<label>${f.label}
+            return `<label style="display:flex;align-items:left;gap:0.3em;"><span>${f.label}${requiredStar}</span>
                 <textarea name="${f.name}">${wizardData[f.name]||''}</textarea>
             </label>`;
         } else {
-            return `<label>${f.label}
+            return `<label style="display:flex;align-items:left;gap:0.3em;"><span>${f.label}${requiredStar}</span>
                 <input type="${f.type}" name="${f.name}" value="${wizardData[f.name]||''}" ${f.required?'required':''} />
             </label>`;
         }
