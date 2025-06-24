@@ -1,49 +1,174 @@
+/* Modern card-like form container */
 #friendForm {
     background: #fff;
-    border-radius: 10px;
-    padding: 2rem;
-    min-width: 320px;
+    border-radius: 14px;
+    box-shadow: 0 4px 24px rgba(74,144,226,0.13), 0 2px 8px rgba(80,227,194,0.10);
+    padding: 2.2rem 2rem 1.5rem 2rem;
+    width: 400px; /* Fixed width for all steps */
     max-width: 95vw;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.15);
+    min-width: 0; /* Remove min-width to avoid width jumps */
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 1.3rem;
     box-sizing: border-box;
     max-height: 90vh;
     overflow-y: auto;
+    border: 1.5px solid #eaf4fb;
 }
+
+/* Label styling for clarity and spacing */
 #friendForm label {
     display: flex;
     flex-direction: column;
-    font-weight: 500;
-    gap: 0.25rem;
+    font-weight: 600;
+    color: #4a90e2;
+    gap: 0.35rem;
+    margin-bottom: 0.2rem;
+    font-size: 1.05rem;
+    letter-spacing: 0.01em;
 }
-#friendForm input, #friendForm textarea {
-    padding: 0.5rem;
-    border: 1px solid #cfd8dc;
-    border-radius: 4px;
-    font-size: 1rem;
+
+/* Modern input and textarea styles */
+#friendForm input,
+#friendForm textarea,
+#friendForm select {
+    padding: 0.65rem 1rem;
+    border: 1.5px solid #cfd8dc;
+    border-radius: 6px;
+    font-size: 1.05rem;
+    background: #f7fafd;
+    transition: border 0.18s, box-shadow 0.18s;
+    margin-top: 0.1rem;
+    margin-bottom: 0.2rem;
+    outline: none;
+    font-family: inherit;
 }
+
+#friendForm input:focus,
+#friendForm textarea:focus,
+#friendForm select:focus {
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px #eaf4fb;
+    background: #fff;
+}
+
 #friendForm textarea {
     resize: vertical;
-    min-height: 40px;
+    min-height: 48px;
+    max-height: 220px;
 }
+
+/* Button group for form actions */
 .modal-actions {
     display: flex;
-    gap: 1rem;
+    gap: 1.2rem;
     justify-content: flex-end;
+    margin-top: 0.8rem;
 }
+
+/* Modern button style for form actions */
+#friendForm button,
+.modal-actions button {
+    background: linear-gradient(135deg, #4a90e2 60%, #50e3c2 100%);
+    color: #fff;
+    border: none;
+    border-radius: 2em;
+    padding: 0.55em 1.7em;
+    font-size: 1.08rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(74,144,226,0.10);
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+    outline: none;
+    margin-top: 0.1em;
+    margin-bottom: 0.1em;
+}
+
+#friendForm button:hover,
+.modal-actions button:hover {
+    background: linear-gradient(135deg, #50e3c2 60%, #4a90e2 100%);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(80, 227, 194, 0.18);
+}
+
 .combobox-wrapper {
     width: 100%;
 }
+
 .combobox-input {
     width: 100%;
     box-sizing: border-box;
-    padding: 0.5rem;
-    border: 1px solid #cfd8dc;
-    border-radius: 4px;
-    font-size: 1rem;
+    padding: 0.65rem 1rem;
+    border: 1.5px solid #cfd8dc;
+    border-radius: 6px;
+    font-size: 1.05rem;
+    background: #f7fafd;
+    transition: border 0.18s, box-shadow 0.18s;
+    outline: none;
 }
+
+.combobox-input:focus {
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px #eaf4fb;
+    background: #fff;
+}
+
 .combobox-list {
     min-width: 100%;
+    background: #fff;
+    border: 1.5px solid #eaf4fb;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(74,144,226,0.07);
+    margin-top: 0.2rem;
+    z-index: 10;
+}
+
+/* Wizard progress dots - subtle, modern style */
+.friend-wizard-steps {
+    display: flex;
+    justify-content: center;
+    gap: 0.4em;
+    margin-bottom: 0.7em;
+}
+
+.friend-wizard-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #f0f4fa;
+    border: 1px solid #cfd8dc;
+    display: inline-block;
+    box-shadow: 0 1px 2px rgba(74,144,226,0.07);
+    transition: background 0.2s, border 0.2s, box-shadow 0.2s;
+}
+
+.friend-wizard-dot.active {
+    background: #50e3c2;
+    border-color: #4a90e2;
+    box-shadow: 0 2px 6px rgba(80,227,194,0.18);
+}
+
+/* Wizard progress bar */
+.friend-wizard-progress {
+    width: 100%;
+    height: 6px;
+    background: #eaf4fb;
+    border-radius: 3px;
+    margin-bottom: 1em;
+    overflow: hidden;
+}
+
+.friend-wizard-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #4a90e2 60%, #50e3c2 100%);
+    border-radius: 3px;
+    transition: width 0.3s;
+}
+
+@media (max-width: 600px) {
+    #friendForm {
+        padding: 1.1rem 0.5rem 1rem 0.5rem;
+        width: 100%; /* Full width on mobile */
+        max-width: 100vw;
+    }
 }
